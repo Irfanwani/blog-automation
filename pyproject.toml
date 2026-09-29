@@ -1,0 +1,9 @@
+[project]
+name = "work-presence"
+version = "0.1.0"
+description = "Authentic work-only blog publisher: local path / github / description -> dev.to + hashnode + medium + linkedin"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+worklog = "cli:main"
