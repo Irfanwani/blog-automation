@@ -29,19 +29,28 @@ def _token() -> str:
 
 
 def _discover_pub_id(mcp: HashnodeMCP, tools: list[dict]) -> str:
+    owned = [t for t in tools if "list_publication" in t.get("name", "")]
+    if owned:
+        try:
+            out = mcp.call(owned[0]["name"], {})
+            ids = re.findall(r"\b([0-9a-f]{24})\b", str(out))
+            if ids:
+                return ids[0]
+        except MCPError:
+            pass
     me_tool = find_tool(tools, ["me", "user", "profile", "whoami"])
     if not me_tool:
         return ""
     try:
         out = mcp.call(me_tool["name"], {})
-        blob = str(out)
-        m = re.search(r"\b([0-9a-f]{24})\b", blob)
+        m = re.search(r"\b([0-9a-f]{24})\b", str(out))
         return m.group(1) if m else ""
     except MCPError:
         return ""
 
 
-def publish(title: str, markdown: str, tags: list[str], cover_url: str = "", draft: bool = True) -> dict:
+def publish(title: str, markdown: str, tags: list[str], cover_url: str = "", draft: bool = True,
+            canonical: str = "") -> dict:
     token = _token()
     if not token:
         return {"ok": False, "error": "Not connected. Run: python cli.py hashnode-auth"}
@@ -55,19 +64,37 @@ def publish(title: str, markdown: str, tags: list[str], cover_url: str = "", dra
     pub_id = os.environ.get("HASHNODE_PUBLICATION_ID", "")
     if not pub_id:
         pub_id = _discover_pub_id(mcp, tools)
+        if pub_id:
+            try:
+                from publisher.hashnode_auth import _upsert_env
+                _upsert_env({"HASHNODE_PUBLICATION_ID": pub_id})
+                print(f"[hashnode] discovered publication id, saved to .env")
+            except Exception:
+                pass
 
-    tool = (find_tool(tools, ["draft", "create"], ["post", "article", "draft"]) or
-            find_tool(tools, ["create"], ["post", "article"]) or
-            find_tool(tools, ["publish"], ["post", "article"]))
+    if draft:
+        tool = (find_tool(tools, ["draft"], ["create", "save", "new"]) or
+                find_tool(tools, ["create"], ["draft"]))
+    else:
+        tool = find_tool(tools, ["create"], ["post", "article"])
+    if not tool:
+        tool = (find_tool(tools, ["draft", "create"], ["post", "article", "draft"]) or
+                find_tool(tools, ["create"], ["post", "article"]) or
+                find_tool(tools, ["publish"], ["post", "article"]))
     if not tool:
         names = [t.get("name") for t in tools]
         return {"ok": False, "error": f"No create/publish tool found. Available: {names}"}
     schema = tool.get("inputSchema", {}).get("properties", {})
-    args = map_args(schema, title, markdown, tags or ["showdev"], pub_id)
+    args = map_args(schema, title, markdown, tags or ["showdev"], pub_id, draft)
     if cover_url:
         for k in schema:
             if "cover" in k.lower() or "image" in k.lower():
                 args[k] = cover_url
+                break
+    if canonical:
+        for k in schema:
+            if "original" in k.lower() and "url" in k.lower():
+                args[k] = canonical
                 break
     try:
         out = mcp.call(tool["name"], args)

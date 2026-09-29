@@ -96,7 +96,7 @@ def find_tool(tools: list[dict], *keywords: str) -> dict | None:
 
 
 def map_args(schema_props: dict, title: str, markdown: str,
-             tags: list[str], pub_id: str) -> dict:
+             tags: list[str], pub_id: str, draft: bool = True) -> dict:
     """Map our fields onto whatever property names the tool schema uses."""
     names = {p.lower(): p for p in schema_props}
     args: dict = {}
@@ -122,8 +122,12 @@ def map_args(schema_props: dict, title: str, markdown: str,
             args[k] = tags
     if pub_id and (k := pick("publication", "publicationid", "blog")):
         args[k] = pub_id
-    if (k := pick("publish", "isdraft", "draft", "status")):
+    if (k := pick("isdraft", "is_draft", "draft")):
         prop = schema_props.get(names[k.lower()], {})
         if prop.get("type") == "boolean":
-            args[k] = False  # create as draft by default
+            args[k] = draft
+    elif (k := pick("publish", "published", "status", "visibility")):
+        prop = schema_props.get(names[k.lower()], {})
+        if prop.get("type") == "boolean":
+            args[k] = not draft
     return args

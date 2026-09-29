@@ -144,7 +144,7 @@ def main() -> None:
         if r.get("url") and not canonical:
             canonical = r["url"]  # reuse as canonical/linkedin link
     if "hashnode" in targets:
-        r = hashnode.publish(title, blog_md, tags, draft=draft)
+        r = hashnode.publish(title, blog_md, tags, draft=draft, canonical=canonical)
         results["results"]["hashnode"] = r
         print(f"[hashnode] {r}")
     record(out_dir, results)
