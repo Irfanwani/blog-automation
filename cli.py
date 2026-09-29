@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import json
 import os
 import re
 import sys
@@ -60,7 +61,18 @@ def main() -> None:
     p.add_argument("--from-file", default="", help="skip generation, use existing blog markdown file")
     p.add_argument("--draft", action="store_true", default=True, help="publish as draft (default true)")
     p.add_argument("--live", action="store_true", help="publish publicly instead of draft")
+    sub.add_parser("hashnode-auth", help="connect Hashnode via OAuth (browser approval)")
+    sub.add_parser("hashnode-tools", help="list tools on Hashnode's MCP server")
     args = ap.parse_args()
+
+    if args.cmd == "hashnode-auth":
+        from publisher.hashnode_auth import run as auth_run
+        print(auth_run())
+        return
+    if args.cmd == "hashnode-tools":
+        from publisher import hashnode as hn
+        print(json.dumps(hn.list_tools(), indent=2))
+        return
 
     author = os.environ.get("AUTHOR_NAME", "")
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
@@ -74,7 +86,9 @@ def main() -> None:
     if args.from_file:
         with open(args.from_file, encoding="utf-8") as f:
             blog_md = f.read()
-        meta: dict = {"title": ctx.title, "tags": ["showdev"]}
+        h1 = re.search(r"^#\s+(.+)$", blog_md, re.M)
+        meta: dict = {"title": (h1.group(1).strip() if h1 else ctx.title)[:90],
+                       "tags": ["showdev", "webdev", "react", "javascript"]}
     elif args.llm == "opencode":
         # Manual opencode-native path: evidence pack + prompt, fallback draft now
         blog_md, meta = fallback_blog(ctx, author)

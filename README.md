@@ -41,7 +41,7 @@ Slash command + agent live in `.opencode/`:
 | Target | Method | Needs |
 |---|---|---|
 | dev.to | `POST /api/articles` | `DEVTO_API_KEY` (settings → extensions) |
-| Hashnode | `gql.hashnode.com publishPost` | `HASHNODE_TOKEN` + `HASHNODE_PUBLICATION_ID` |
+| Hashnode | API **only on Pro plan** (free access retired May 2026); otherwise dashboard import, like Medium | `HASHNODE_TOKEN` + `HASHNODE_PUBLICATION_ID` |
 | Medium | export + import-story (API deprecated, honest fallback) | nothing |
 | LinkedIn | `output/<slug>-linkedin.txt` copy-paste draft (API needs app review; this avoids bans) | nothing |
 
