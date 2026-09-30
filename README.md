@@ -1,6 +1,6 @@
 # work-presence — work-only tech presence, no fake content
 
-Prompt with a **local path, GitHub URL, or description** → get an evidence-backed blog → publish to **dev.to + Hashnode** (API), **Medium** (1-click import, API is deprecated), and a **LinkedIn copy-paste draft** linking the blog.
+Prompt with a **local path, GitHub URL, or description** → get an evidence-backed blog → publish to **dev.to + Hashnode** (API), **Medium** (1-click import), a full **LinkedIn post** + **X thread** (copy-paste drafts), with **screenshots in blogs and a demo video for LinkedIn/X** captured from your running project.
 
 ## Quickstart
 
@@ -19,6 +19,12 @@ python cli.py publish --source "Built offline-first geotag camera with ..." --dr
 # 3. Publish (asks nothing, posts as drafts by default)
 python cli.py publish --source ../sidekick --from-file output/<slug>-final.md
 python cli.py publish --source ../sidekick --from-file output/<slug>-final.md --live  # public, not draft
+
+# With demo media (local web projects): starts the dev server, captures
+# 3 screenshots + a 10-30s demo video, embeds shots in the blog
+python cli.py publish --source ../sidekick --media --dry-run
+python cli.py publish --source ../sidekick --media --from-file output/<slug>-final.md
+# or capture any already-running app: --url http://127.0.0.1:5173
 
 # Hashnode first-time setup (OAuth browser approval, one time):
 python cli.py hashnode-auth      # stores HASHNODE_MCP_* in .env
@@ -48,7 +54,24 @@ Slash command + agent live in `.opencode/`:
 | Hashnode | Official MCP server (`mcp.hashnode.com/mcp`) via `publisher/hashnode_mcp.py`. **Writes require a Pro plan** (free API retired May 2026, verified: server returns `FORBIDDEN` without Pro). Publication ID auto-discovered from `list_publications` | `python cli.py hashnode-auth` (OAuth, one time) |
 | Hashnode (free) | Dashboard → new post → **import from URL**, paste the dev.to link. Pulls content + sets canonical automatically | nothing |
 | Medium | export + import-story (API deprecated, honest fallback) | nothing |
-| LinkedIn | `output/<slug>-linkedin.txt` copy-paste draft (API needs app review; this avoids bans) | nothing |
+| LinkedIn | **full native post** (story + detail + lesson, links at end) as copy-paste draft; demo video attached manually | nothing |
+| X | **native thread** (hook + one idea per tweet, ≤280 chars checked) as copy-paste draft; video attached to tweet 1. Auto-post with `--live` if `X_*` creds exist (OAuth 1.0a, chunked video upload, reply-chain thread). Free X API is read-only — 401/403/429 degrade to the draft file, never a crash | nothing (or `X_API_KEY/SECRET + X_ACCESS_TOKEN/SECRET`) |
+
+## Platform voices
+
+One source, three shapes (`generator/templates.py`): the **blog** is long-form dev-to-dev;
+**LinkedIn** is a standalone professional post, never a link drop; **X** is a hook-first
+thread where each tweet stands alone. The LLM prompt asks for all three at once
+(`BLOG %%% LINKEDIN %%% X %%% META`); offline fallbacks generate all three from evidence.
+
+## Demo media (`--media`, local web projects only)
+
+`media/runner.py` starts your dev server (vite/next/npm, collision-safe port detect),
+`media/capture.mjs` (Playwright + ffmpeg) screenshots 3 frames and records a ≤30s
+720p mp4 of a scripted mouse sweep. Blogs get screenshots only; LinkedIn/X drafts
+reference the video for manual attach. Screenshots are copied to your project's
+`docs/demo/` and embedded as `raw.githubusercontent.com` URLs on your current branch —
+**commit + push for them to render**. Expo/mobile: capture on-device manually.
 
 > Hashnode free-plan reality (Sep 2026): connecting works and reads work, but
 > `create_draft`/`create_post` return `FORBIDDEN` without Pro. Don't retry —
