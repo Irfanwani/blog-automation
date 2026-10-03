@@ -67,6 +67,7 @@ def main() -> None:
     p.add_argument("--url", default="", help="capture this running URL instead of starting a dev server")
     p.add_argument("--img-mode", default="repo", choices=["repo", "local"],
                    help="repo: host screenshots via your project's docs/demo on GitHub; local: keep filenames only")
+    p.add_argument("--no-cover", action="store_true", help="skip auto cover image")
     sub.add_parser("hashnode-auth", help="connect Hashnode via OAuth (browser approval)")
     sub.add_parser("hashnode-tools", help="list tools on Hashnode's MCP server")
     args = ap.parse_args()
@@ -168,6 +169,21 @@ def main() -> None:
     with open(blog_path, "w", encoding="utf-8") as f:
         f.write(blog_md if blog_md.startswith("#") else f"# {title}\n\n{blog_md}")
     print(f"[draft] {blog_path}")
+
+    # --- 1b. auto cover image (typographic, series-styled) ---
+    if not args.no_cover:
+        try:
+            from media.cover import make_cover
+            cover_png = make_cover(out_dir, slug, title, meta.get("tldr", ""), tags, ctx.title)
+            print(f"[cover] {cover_png}")
+            if project_dir:
+                import shutil
+                dest = os.path.join(project_dir, "docs", os.path.basename(cover_png))
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                shutil.copy2(cover_png, dest)
+                print(f"[cover] copied to {dest} — commit+push, then set as cover in the blog dashboard/API")
+        except Exception as e:
+            print(f"[cover] skipped: {e}", file=sys.stderr)
 
     # --- 2. linkedin (full native post) + x (thread) — always local files ---
     targets = [t.strip().lower() for t in args.targets.split(",")]

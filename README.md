@@ -73,6 +73,14 @@ reference the video for manual attach. Screenshots are copied to your project's
 `docs/demo/` and embedded as `raw.githubusercontent.com` URLs on your current branch —
 **commit + push for them to render**. Expo/mobile: capture on-device manually.
 
+## Cover images (automatic)
+
+Every run generates `output/<slug>-cover.png` (1000×420, dev.to size) from
+`media/cover.py` — typographic, terminal aesthetic, no AI slop. `Part N` in the
+title becomes the kicker (`SIDEKICK · PART 2`); tags go in the side panel.
+For local sources it's also copied to your project's `docs/` — commit + push,
+then set it as the cover in the blog dashboard (or API). `--no-cover` skips.
+
 > Hashnode free-plan reality (Sep 2026): connecting works and reads work, but
 > `create_draft`/`create_post` return `FORBIDDEN` without Pro. Don't retry —
 > use the import-from-URL fallback until/unless you upgrade.
